@@ -74,6 +74,10 @@ func NewClient(options ClientOptions) *Client {
 	}).addHeaders(options.Headers)
 }
 
+func (c *Client) Close() {
+	c.HttpClient.Transport.(*http.Transport).CloseIdleConnections()
+}
+
 func defaultHeader() http.Header {
 	var header http.Header
 	header = make(map[string][]string)
