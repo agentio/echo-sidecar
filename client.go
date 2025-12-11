@@ -46,17 +46,15 @@ func NewClient(options ClientOptions) *Client {
 	protocols.SetHTTP2(false)           // Explicitly disable encrypted HTTP/2 (HTTPS)
 	// If required, create a client that can call unix sockets.
 	if strings.HasPrefix(options.Address, "unix:") {
+		address := strings.TrimPrefix(options.Address, "unix:")
 		return (&Client{
-			Host:   strings.Replace(options.Address, "unix:", "http://", 1),
+			Host:   "http://socket", // The name "socket" is arbitrary.
 			Header: defaultHeader(),
 			HttpClient: &http.Client{
 				Transport: &http.Transport{
 					Protocols: protocols,
-					DialContext: func(ctx context.Context, _ string, addr string) (net.Conn, error) {
-						addr = strings.TrimPrefix(addr, "http://")
-						addr = strings.TrimSuffix(addr, ":80")
-						addr = "@" + addr
-						return net.DialTimeout("unix", addr, 5*time.Second)
+					DialContext: func(ctx context.Context, _ string, _ string) (net.Conn, error) {
+						return net.DialTimeout("unix", address, 5*time.Second)
 					},
 				},
 			},
