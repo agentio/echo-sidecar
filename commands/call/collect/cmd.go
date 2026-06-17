@@ -1,15 +1,13 @@
-// Package get implements calls to the get method.
-package get
+// Package collect implements calls to the collect method.
+package collect
 
 import (
 	"fmt"
 	"log"
-	"time"
 
+	"github.com/agentio/echo-sidecar/constants"
+	"github.com/agentio/echo-sidecar/genproto/echopb"
 	"github.com/agentio/sidecar"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/constants"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/genproto/echopb"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/track"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -22,37 +20,39 @@ func Cmd() *cobra.Command {
 	var insecure bool
 	var headers []string
 	cmd := &cobra.Command{
-		Use:  "get",
+		Use:  "collect",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := sidecar.NewClient(sidecar.ClientOptions{Address: address, Insecure: insecure, Headers: headers})
-			defer track.Measure(time.Now(), "get", n, cmd.OutOrStdout())
-			for j := 0; j < n; j++ {
-				response, err := sidecar.CallUnary[echopb.EchoRequest, echopb.EchoResponse](
-					cmd.Context(),
-					client,
-					constants.EchoGetProcedure,
-					sidecar.NewRequest(&echopb.EchoRequest{Text: message}),
-				)
+			stream, err := sidecar.CallClientStream[echopb.EchoRequest, echopb.EchoResponse](
+				cmd.Context(),
+				client,
+				constants.EchoCollectProcedure,
+			)
+			if err != nil {
+				return err
+			}
+			for range 3 {
+				err = stream.Send(&echopb.EchoRequest{Text: message})
 				if err != nil {
-					log.Printf("returning from 1 %T %+v", err, err)
+					log.Printf("Error writing to pipe: %v", err)
 					return err
 				}
-				if n == 1 {
-					body, err := protojson.Marshal(response.Msg)
-					if err != nil {
-						log.Printf("returning from 2")
-
-						return err
-					}
-					_, _ = cmd.OutOrStdout().Write(body)
-					_, _ = cmd.OutOrStdout().Write([]byte("\n"))
-					if verbose {
-						fmt.Println("Response Trailers:")
-						for key, values := range response.Trailer {
-							fmt.Printf("  %s: %v\n", key, values)
-						}
-					}
+			}
+			response, err := stream.CloseAndReceive()
+			if err != nil {
+				return err
+			}
+			body, err := protojson.Marshal(response)
+			if err != nil {
+				return err
+			}
+			_, _ = cmd.OutOrStdout().Write(body)
+			_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+			if verbose {
+				fmt.Println("Response Trailers:")
+				for key, values := range stream.Trailer {
+					fmt.Printf("  %s: %v\n", key, values)
 				}
 			}
 			return nil

@@ -2,8 +2,8 @@
 package commands
 
 import (
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/call"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/serve"
+	"github.com/agentio/echo-sidecar/commands/call"
+	"github.com/agentio/echo-sidecar/commands/serve"
 	"github.com/spf13/cobra"
 )
 

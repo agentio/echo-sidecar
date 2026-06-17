@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands"
+	"github.com/agentio/echo-sidecar/commands"
 )
 
 func main() {

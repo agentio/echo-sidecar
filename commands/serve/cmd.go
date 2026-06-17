@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/agentio/echo-sidecar/constants"
+	"github.com/agentio/echo-sidecar/genproto/echopb"
 	"github.com/agentio/sidecar"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/constants"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/genproto/echopb"
 	"github.com/spf13/cobra"
 )
 

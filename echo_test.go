@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands"
+	"github.com/agentio/echo-sidecar/commands"
 )
 
 func TestSocket(t *testing.T) {

@@ -1,64 +1,57 @@
-# Sidecar gRPC
+# echo-sidecar
 
-Sidecar is a library for creating gRPC clients and servers in Go.
+This directory contains a command-line tool that includes a server and
+clients for a sample gRPC service that demonstrates all four streaming
+modes of gRPC.
 
-Sidecar arose from the realization that popular gRPC libraries like [grpc-go](https://github.com/grpc/grpc-go) and [connect-go](https://github.com/connectrpc/connect-go) are loaded with capabilities that aren't needed by gRPC applications that use sidecar proxies. When applications use sidecars, the sidecars provide these capabilities along with assurance that they are implemented and configured correctly. Redundantly including them in networking support libraries adds needless complexity, bloat, and supply-chain risk.
+The server and clients can communicate over TCP ports or Linux abstract sockets.
 
-Some of the capabilities that Sidecar intentionally omits include:
-- Compression
-- Transcoding
-- Name Resolution
-- Load Balancing
-- Interceptors
-- Retry
-- Health Checking
-- Observability
-
-If you need these capabilities built into your application, then another gRPC library is probably a better fit. But if you are building gRPC services that delegate advanced networking to sidecar proxies, Sidecar can help you make your services lean and maintainable.
-
-## Built on the Go standard library
-
-With Sidecar, gRPC applications build directly on the HTTP2 support in the Go standard library. Beginning with Go 1.25, this includes [SetUnencryptedHTTP2](https://pkg.go.dev/net/http#Protocols.SetUnencryptedHTTP2), which clients and servers can use to create unencrypted HTTP2 connections (also called "HTTP/2 cleartext" or h2c). It also includes connection sharing and reuse, which allows HTTP2 connections to be automatically reused, and all configuration options in the Go standard library are directly available to Sidecar-based applications.
-
-## No Generated Code
-
-Apart from protocol buffer serialization, Sidecar does not use code generation. Instead, Go generics are used to call gRPC methods with appropriate types. This slightly increases inline complexity, but adds development and build-time simplicity. For example, here is a call to a unary gRPC method:
-```go
-// Create a reusable client.
-client := sidecar.NewClient(sidecar.ClientOptions{Address:address})
-// Use the client to make a unary rpc call.
-response, err := sidecar.CallUnary[echopb.EchoRequest, echopb.EchoResponse](
-	ctx,
-	client,
-	"/echo.v1.Echo/Get",
-	sidecar.NewRequest(&echopb.EchoRequest{Text: message}),
-)
+To use TCP ports, start the server with the `--port` flag:
+```sh
+echo-sidecar serve --port 8088
 ```
 
-## Example
-
-This repo includes [echo-sidecar](/cmd/echo-sidecar), a command-line tool that uses Sidecar to build and call a gRPC server that implements a simple echo service. All four gRPC streaming modes are demonstrated.
-
-## Bring Your Own Serialization
-
-Along with protobuf-encoded messages, Sidecar allows messages to be sent and received as raw bytes. Here's an example using protobuf encoding that shows how you can use your own favorite encoding:
-```go
-// Create a reusable client.
-client := sidecar.NewClient(sidecar.ClientOptions{Address:address})
-// Marshal a request message.
-b, _ := proto.Marshal(&echopb.EchoRequest{Text: message})
-// Use the client to make a unary rpc call.
-response, err := sidecar.CallUnary[[]byte, []byte](
-	ctx,
-	client,
-	"/echo.v1.Echo/Get",
-	sidecar.NewRequest(&b),
-)
-// Unmarshal the response
-var message echopb.EchoResponse
-err = proto.Unmarshal(*(response.Msg), &message)
+Call the client with the `--address` flag as below:
+```sh
+echo-sidecar call get --address localhost:8088
 ```
 
-## License
+To use Linux abstract sockets, run the server with the `--socket` flag:
+```sh
+echo-sidecar serve --socket @echo
+```
 
-Sidecar is released under the [Apache 2 license](/LICENSE).
+Call the client with the `--address` flag as below:
+```sh
+echo-sidecar call get --address unix:@echo
+```
+
+Running `echo-sidecar call` lists the four test methods:
+```sh
+$ echo-sidecar call
+Usage:
+  echo-sidecar call [command]
+
+Available Commands:
+  collect
+  expand
+  get
+  update
+
+Flags:
+  -h, --help   help for call
+
+Use "echo-sidecar call [command] --help" for more information about a command.
+```
+
+Running `go test` in this directory tests the server and clients for all four modes over both a local TCP connection and a Linux abstract socket.
+```sh
+$ go test . -v
+=== RUN   TestSocket
+--- PASS: TestSocket (0.02s)
+=== RUN   TestLocal
+--- PASS: TestLocal (0.02s)
+PASS
+ok      github.com/agentio/echo-sidecar     0.043s
+```
+

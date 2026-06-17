@@ -2,10 +2,10 @@
 package call
 
 import (
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/call/collect"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/call/expand"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/call/get"
-	"github.com/agentio/sidecar/cmd/echo-sidecar/commands/call/update"
+	"github.com/agentio/echo-sidecar/commands/call/collect"
+	"github.com/agentio/echo-sidecar/commands/call/expand"
+	"github.com/agentio/echo-sidecar/commands/call/get"
+	"github.com/agentio/echo-sidecar/commands/call/update"
 	"github.com/spf13/cobra"
 )
 
